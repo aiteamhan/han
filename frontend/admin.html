@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - WeChat</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="modal active">
+        <div class="modal-content login-box">
+            <h2>管理员登录</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="adminUsername">用户名</label>
+                    <input type="text" id="adminUsername" placeholder="输入管理员用户名" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">密码</label>
+                    <input type="password" id="adminPassword" placeholder="输入密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary">登录</button>
+                <p id="loginError" class="error-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="adminPanel" class="admin-panel hidden">
+        <!-- 左侧导航菜单 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>管理后台</h3>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            </div>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="#dashboard" class="nav-link active" data-page="dashboard">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">首页</span>
+                    </a></li>
+                    <li><a href="#messages" class="nav-link" data-page="messages">
+                        <span class="nav-icon">💬</span>
+                        <span class="nav-text">消息</span>
+                    </a></li>
+                    <li><a href="#settings" class="nav-link" data-page="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">设置</span>
+                    </a></li>
+                    <li><a href="#users" class="nav-link" data-page="users">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">用户资料</span>
+                    </a></li>
+                    <li><a href="#reports" class="nav-link" data-page="reports">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">举报信息</span>
+                    </a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn btn-logout">退出登录</button>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 页面头部 -->
+            <header class="page-header">
+                <h1 id="pageTitle">首页</h1>
+                <div class="header-right">
+                    <span id="adminName" class="admin-name">管理员</span>
+                    <button id="userMenuBtn" class="user-menu-btn">▼</button>
+                </div>
+            </header>
+
+            <!-- 页面内容 -->
+            <div class="page-content">
+                <!-- 首页 -->
+                <section id="dashboardPage" class="page-section active">
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <h3>总用户数</h3>
+                            <p class="card-value" id="totalUsers">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>在线用户</h3>
+                            <p class="card-value" id="onlineUsers">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>总会话数</h3>
+                            <p class="card-value" id="totalConversations">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>总消息数</h3>
+                            <p class="card-value" id="totalMessages">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 消息页面 -->
+                <section id="messagesPage" class="page-section">
+                    <div class="section-header">
+                        <h2>消息管理</h2>
+                    </div>
+                    <div class="coming-soon">
+                        <p>消息管理功能开发中...</p>
+                    </div>
+                </section>
+
+                <!-- 设置页面 -->
+                <section id="settingsPage" class="page-section">
+                    <div class="section-header">
+                        <h2>系统设置</h2>
+                    </div>
+                    <div class="coming-soon">
+                        <p>系统设置功能开发中...</p>
+                    </div>
+                </section>
+
+                <!-- 用户资料页面 -->
+                <section id="usersPage" class="page-section">
+                    <div class="section-header">
+                        <h2>用户管理</h2>
+                        <div class="header-actions">
+                            <input type="text" id="userSearch" placeholder="搜索用户名或ID..." class="search-box">
+                        </div>
+                    </div>
+                    
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">总用户数：</span>
+                            <span class="stat-value" id="userCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">在线用户：</span>
+                            <span class="stat-value" id="onlineCount">0</span>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>ID</th>
+                                    <th>昵称</th>
+                                    <th>在线状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 举报信息页面 -->
+                <section id="reportsPage" class="page-section">
+                    <div class="section-header">
+                        <h2>举报信息</h2>
+                    </div>
+                    <div class="coming-soon">
+                        <p>举报信息管理功能开发中...</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
