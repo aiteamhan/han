@@ -2,7 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7859026a-3730-4b12-b4d3-d42362f0773a" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/check.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/instance/wechat.db" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/instance/wechat.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/css/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/css/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/js/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/js/api.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/js/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/js/storage.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/js/storage.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/js/ui.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/js/ui.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/js/websocket.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/js/websocket.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,30 +30,30 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7,
-  "fromUser": false
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3DwboSUXA57HSPTy7LM8xIcnx6n" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "C:/han/checkhtml",
-    "to.speed.mode.migration.done": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/han/checkhtml&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="checkhtml" />

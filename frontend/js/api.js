@@ -150,3 +150,4 @@ class ApiClient {
 
 // 全局API客户端实例
 const api = new ApiClient();
+window.api = api;

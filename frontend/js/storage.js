@@ -161,3 +161,4 @@ class StorageManager {
 
 // 全局存储管理实例
 const storage = new StorageManager();
+window.storage = storage;

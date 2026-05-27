@@ -494,6 +494,186 @@ def get_admin_users():
             'code': 5000,
             'message': '获取用户列表失败'
         }), 500
+
+
+# ============ 文件上传路由 ============
+@api_bp.route('/files/upload', methods=['POST'])
+@jwt_required()
+def upload_file():
+    """上传文件"""
+    import os
+    from werkzeug.utils import secure_filename
+    
+    user_id = get_jwt_identity()
+    
+    if 'file' not in request.files:
+        return jsonify({
+            'code': 1005,
+            'message': '请选择要上传的文件'
+        }), 400
+    
+    file = request.files['file']
+    conversation_id = request.form.get('conversation_id')
+    
+    if file.filename == '':
+        return jsonify({
+            'code': 1005,
+            'message': '文件名不能为空'
+        }), 400
+    
+    if not conversation_id:
+        return jsonify({
+            'code': 1005,
+            'message': '会话ID不能为空'
+        }), 400
+    
+    try:
+        # 验证文件大小 (限制为 100MB)
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        
+        max_size = 100 * 1024 * 1024  # 100MB
+        if file_size > max_size:
+            return jsonify({
+                'code': 1006,
+                'message': '文件大小超过限制 (最大 100MB)'
+            }), 400
+        
+        # 创建文件保存目录
+        upload_dir = os.path.join(os.path.dirname(__file__), '../uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # 生成安全的文件名
+        filename = secure_filename(file.filename)
+        file_id = str(uuid.uuid4())
+        file_ext = os.path.splitext(filename)[1]
+        saved_filename = f'{file_id}{file_ext}'
+        file_path = os.path.join(upload_dir, saved_filename)
+        
+        # 保存文件
+        file.save(file_path)
+        
+        # 保存文件信息到数据库
+        from models import FileUpload
+        file_record = FileUpload(
+            id=file_id,
+            conversation_id=conversation_id,
+            sender_id=user_id,
+            original_name=filename,
+            saved_name=saved_filename,
+            file_size=file_size,
+            file_type=file.content_type
+        )
+        db.session.add(file_record)
+        db.session.commit()
+        
+        # 创建文件消息
+        message = DatabaseManager.create_message(
+            conversation_id,
+            user_id,
+            f'/api/files/{file_id}',  # 文件URL
+            'file'
+        )
+        
+        # 添加文件元数据到消息内容
+        message.content = f'{{"fileId": "{file_id}", "fileName": "{filename}", "fileSize": {file_size}, "fileType": "{file.content_type}"}}'
+        db.session.commit()
+        
+        return jsonify({
+            'code': 0,
+            'message': '上传成功',
+            'data': {
+                'fileId': file_id,
+                'fileName': filename,
+                'fileSize': file_size,
+                'fileType': file.content_type,
+                'url': f'/api/files/{file_id}',
+                'message': message.to_dict()
+            }
+        }), 201
+    
+    except Exception as e:
+        print(f'File upload error: {e}')
+        return jsonify({
+            'code': 5000,
+            'message': '上传失败，请稍后重试'
+        }), 500
+
+
+@api_bp.route('/files/<file_id>', methods=['GET'])
+def download_file(file_id):
+    """下载/查看文件"""
+    import os
+    from flask import send_file
+    
+    try:
+        from models import FileUpload
+        file_record = FileUpload.query.get(file_id)
+        
+        if not file_record:
+            return jsonify({
+                'code': 1007,
+                'message': '文件不存在'
+            }), 404
+        
+        upload_dir = os.path.join(os.path.dirname(__file__), '../uploads')
+        file_path = os.path.join(upload_dir, file_record.saved_name)
+        
+        if not os.path.exists(file_path):
+            return jsonify({
+                'code': 1007,
+                'message': '文件未找到'
+            }), 404
+        
+        return send_file(
+            file_path,
+            download_name=file_record.original_name,
+            as_attachment=True
+        )
+    
+    except Exception as e:
+        print(f'File download error: {e}')
+        return jsonify({
+            'code': 5000,
+            'message': '下载失败'
+        }), 500
+
+
+@api_bp.route('/messages/<message_id>/edit', methods=['PUT'])
+@jwt_required()
+def edit_message(message_id):
+    """编辑消息"""
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    message = DatabaseManager.get_message(message_id)
+    
+    if not message:
+        return jsonify({'message': '消息不存在'}), 404
+    
+    if message.sender_id != user_id:
+        return jsonify({'message': '只能编辑自己的消息'}), 403
+    
+    new_content = data.get('content', '').strip()
+    
+    if not new_content:
+        return jsonify({'message': '消息内容不能为空'}), 400
+    
+    try:
+        message = DatabaseManager.edit_message(message_id, new_content)
+        
+        return jsonify({
+            'code': 0,
+            'data': message.to_dict()
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+        return jsonify({
+            'code': 5000,
+            'message': '获取用户列表失败'
+        }), 500
 def update_group(group_id):
     """更新群聊信息"""
     user_id = get_jwt_identity()

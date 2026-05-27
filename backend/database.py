@@ -300,3 +300,14 @@ class DatabaseManager:
         ).limit(limit).all()
         
         return [u.to_dict() for u in users]
+    
+    @staticmethod
+    def edit_message(message_id, new_content):
+        """编辑消息"""
+        message = Message.query.get(message_id)
+        if message:
+            message.content = new_content
+            message.is_edited = True
+            message.edited_at = datetime.utcnow()
+            db.session.commit()
+        return message

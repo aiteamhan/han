@@ -160,7 +160,11 @@
             <h2>登录</h2>
             <form id="loginForm">
                 <input type="text" id="loginUsername" placeholder="用户名" required>
-                <input type="password" id="loginPassword" placeholder="密码" required>
+                    <input type="password" id="loginPassword" placeholder="密码" required>
+                    <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="loginShowPassword">
+                        <label for="loginShowPassword" style="user-select:none;">显示密码</label>
+                    </div>
                 <button type="submit" class="btn-primary">登录</button>
                 <p>没有账号？<a href="#" id="switchToRegister">注册</a></p>
             </form>
@@ -174,6 +178,10 @@
                 <input type="text" id="registerUsername" placeholder="用户名" required>
                 <input type="password" id="registerPassword" placeholder="密码" required>
                 <input type="password" id="registerConfirm" placeholder="确认密码" required>
+                <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="registerShowPassword">
+                    <label for="registerShowPassword" style="user-select:none;">显示密码</label>
+                </div>
                 <button type="submit" class="btn-primary">注册</button>
                 <p>已有账号？<a href="#" id="switchToLogin">登录</a></p>
             </form>
@@ -198,5 +206,42 @@
     <script src="js/websocket.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
+    
+    <!-- 初始化全局对象 -->
+    <script>
+        // 确保所有全局对象都被正确初始化
+        (function initializeGlobals() {
+            console.log('Initializing globals...');
+            
+            // 检查并创建缺失的全局对象
+            if (typeof UIManager !== 'undefined' && !window.ui) {
+                window.ui = new UIManager();
+                console.log('Created ui instance');
+            }
+            
+            if (typeof StorageManager !== 'undefined' && !window.storage) {
+                window.storage = new StorageManager();
+                console.log('Created storage instance');
+            }
+            
+            if (typeof ApiClient !== 'undefined' && !window.api) {
+                window.api = new ApiClient();
+                console.log('Created api instance');
+            }
+            
+            if (typeof WebSocketManager !== 'undefined' && !window.wsManager) {
+                window.wsManager = new WebSocketManager();
+                console.log('Created wsManager instance');
+            }
+            
+            console.log('Globals initialized:', {
+                ui: typeof window.ui,
+                storage: typeof window.storage,
+                api: typeof window.api,
+                wsManager: typeof window.wsManager,
+                app: typeof window.app
+            });
+        })();
+    </script>
 </body>
 </html>

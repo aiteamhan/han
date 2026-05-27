@@ -43,6 +43,19 @@ class App {
         await this.loadConversations();
         await this.loadContacts();
 
+        // 初始化消息编辑/删除功能
+        ui.initMessageActions();
+        
+        // 监听编辑/删除消息事件
+        if (wsManager.socket) {
+            wsManager.socket.on('message_edited', (data) => {
+                ui.updateMessageBubble(data.messageId, { content: data.content });
+            });
+            wsManager.socket.on('message_deleted', (data) => {
+                ui.updateMessageBubble(data.messageId, { isDeleted: true });
+            });
+        }
+
         this.initialized = true;
         console.log('App initialized');
     }
@@ -556,25 +569,65 @@ class App {
 
         for (let file of files) {
             try {
+                // 检查文件大小
+                const maxSize = 100 * 1024 * 1024; // 100MB
+                if (file.size > maxSize) {
+                    ui.showError(`文件 ${file.name} 超过大小限制 (最大100MB)`);
+                    continue;
+                }
+
                 // 检查文件类型
                 const isImage = file.type.startsWith('image/');
                 const isAudio = file.type.startsWith('audio/');
                 const isVideo = file.type.startsWith('video/');
 
-                let messageContent = file.name;
-                let messageType = 'file';
+                console.log(`上传文件: ${file.name}, 类型: ${file.type}, 大小: ${file.size}`);
 
-                if (isImage || isAudio || isVideo) {
-                    messageType = isImage ? 'image' : (isAudio ? 'audio' : 'video');
-                    // 对于本演示，我们简单地显示文件名
-                    // 实际应用中应该上传到服务器并获取URL
-                    messageContent = `[${messageType.toUpperCase()}] ${file.name}`;
+                // 上传文件到服务器
+                try {
+                    const response = await api.uploadFile(this.currentConversationId, file);
+                    
+                    if (response.code === 0) {
+                        // 成功上传，消息已由服务器创建
+                        const message = response.data.message;
+                        
+                        // 解析文件信息
+                        let fileInfo;
+                        try {
+                            fileInfo = JSON.parse(message.content);
+                        } catch (e) {
+                            fileInfo = {};
+                        }
+                        
+                        // 显示上传的文件消息
+                        const displayMessage = {
+                            id: message.id,
+                            senderId: this.currentUser.id,
+                            senderName: this.currentUser.username,
+                            senderAvatar: this.currentUser.avatar,
+                            content: `[文件] ${fileInfo.fileName || file.name}`,
+                            type: 'file',
+                            timestamp: message.timestamp,
+                            status: 'sent',
+                            fileInfo: fileInfo
+                        };
+                        
+                        ui.appendMessage(displayMessage, true);
+                        storage.saveMessage(this.currentConversationId, displayMessage);
+                        
+                        // 通过WebSocket通知其他用户
+                        wsManager.send('send_message', {
+                            conversation_id: this.currentConversationId,
+                            content: message.content,
+                            type: 'file'
+                        });
+                    } else {
+                        ui.showError(`上传失败: ${response.message}`);
+                    }
+                } catch (error) {
+                    console.error('文件上传失败:', error);
+                    ui.showError(`上传文件 ${file.name} 失败: ${error.message}`);
                 }
-
-                console.log(`上传文件: ${file.name}, 类型: ${messageType}`);
-
-                // 发送消息
-                this.sendMessage(messageContent);
             } catch (error) {
                 console.error('文件处理失败:', error);
                 ui.showError('文件处理失败');
@@ -656,5 +709,16 @@ window.app = app;
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
+    // 确保所有依赖都已加载
+    if (typeof ui === 'undefined' || typeof storage === 'undefined' || typeof api === 'undefined' || typeof wsManager === 'undefined') {
+        console.error('Missing dependencies:', {
+            ui: typeof ui,
+            storage: typeof storage,
+            api: typeof api,
+            wsManager: typeof wsManager
+        });
+        setTimeout(() => app.init(), 100);
+        return;
+    }
     app.init();
 });

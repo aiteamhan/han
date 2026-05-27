@@ -126,12 +126,10 @@ class UIManager {
                 btn.addEventListener('click', (e) => {
                     const action = e.target.dataset.action;
                     if (action === 'edit') {
-                        console.log('编辑消息:', message.id);
-                        // TODO: 实现消息编辑功能
+                        window.app.editMessage(message);
                     } else if (action === 'revoke') {
                         if (confirm('确定要撤回这条消息吗？')) {
-                            console.log('撤回消息:', message.id);
-                            // TODO: 实现消息撤回功能
+                            window.app.deleteMessage(message.id);
                         }
                     }
                     group.querySelector('.message-actions').style.display = 'none';
@@ -332,4 +330,106 @@ class UIManager {
 }
 
 // 全局UI管理实例
-const ui = new UIManager();
+    // 更新消息显示 (编辑后或已标记删除)
+    updateMessageBubble(messageId, updates) {
+        const bubble = $(`[data-message-id="${messageId}"]`);
+        if (!bubble) return;
+
+        if (updates.isDeleted) {
+            const contentDiv = bubble.querySelector('.message-bubble');
+            if (contentDiv) {
+                contentDiv.textContent = '[消息已撤回]';
+                contentDiv.style.color = '#999';
+                contentDiv.style.fontStyle = 'italic';
+            }
+            // 移除编辑/撤回菜单
+            const menu = bubble.querySelector('.message-actions');
+            if (menu) menu.remove();
+        } else if (updates.content) {
+            const contentDiv = bubble.querySelector('.message-bubble');
+            if (contentDiv) {
+                contentDiv.textContent = updates.content;
+                // 添加已编辑标记
+                const timeDiv = bubble.querySelector('.message-time');
+                if (timeDiv && !timeDiv.textContent.includes('(已编辑)')) {
+                    timeDiv.textContent += ' (已编辑)';
+                }
+            }
+        }
+    }
+
+    // 添加消息编辑功能
+    addEditMessageMethod() {
+        if (window.app && !window.app.editMessage) {
+            window.app.editMessage = async (message) => {
+                const newContent = prompt('编辑消息:', message.content);
+                if (newContent !== null && newContent.trim()) {
+                    try {
+                        await api.editMessage(message.id, newContent.trim());
+                        ui.updateMessageBubble(message.id, { content: newContent.trim() });
+                        wsManager.socket?.emit('edit_message', {
+                            message_id: message.id,
+                            content: newContent.trim()
+                        });
+                    } catch (error) {
+                        ui.showError('编辑消息失败: ' + error.message);
+                    }
+                }
+            };
+        }
+    }
+
+    // 添加消息删除功能
+    addDeleteMessageMethod() {
+        if (window.app && !window.app.deleteMessage) {
+            window.app.deleteMessage = async (messageId) => {
+                try {
+                    await api.revokeMessage(messageId);
+                    ui.updateMessageBubble(messageId, { isDeleted: true });
+                    wsManager.socket?.emit('delete_message', {
+                        message_id: messageId
+                    });
+                } catch (error) {
+                    ui.showError('撤回消息失败: ' + error.message);
+                }
+            };
+        }
+    }
+
+    // 初始化消息编辑/删除功能
+    initMessageActions() {
+        this.addEditMessageMethod();
+        this.addDeleteMessageMethod();
+    }
+}
+
+// 创建全局UI管理实例
+try {
+    console.log('Creating UIManager instance...');
+    const ui = new UIManager();
+    console.log('UIManager created successfully');
+    window.ui = ui;
+    console.log('window.ui assigned:', typeof window.ui);
+    
+    // 验证分配
+    if (window.ui && window.ui instanceof UIManager) {
+        console.log('✓ ui instance successfully assigned to window');
+    } else {
+        console.warn('⚠ ui instance assignment verification failed');
+        window.ui = ui; // 强制重新分配
+    }
+} catch (error) {
+    console.error('Failed to create UIManager:', error);
+    window.ui = undefined;
+}
+
+// 立即验证
+setTimeout(function() {
+    if (typeof window.ui === 'undefined') {
+        console.warn('⚠ UIManager still not defined after creation, attempting manual assignment');
+        if (typeof UIManager !== 'undefined') {
+            window.ui = new UIManager();
+            console.log('Manual UIManager creation successful');
+        }
+    }
+}, 0);

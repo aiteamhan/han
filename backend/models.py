@@ -136,6 +136,8 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(20), default='text')  # 'text', 'image', 'file', etc.
     status = db.Column(db.String(20), default='sent')  # 'sent', 'read', 'deleted'
+    is_edited = db.Column(db.Boolean, default=False)
+    edited_at = db.Column(db.DateTime, nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -149,6 +151,8 @@ class Message(db.Model):
             'content': self.content,
             'type': self.type,
             'status': self.status,
+            'isEdited': self.is_edited,
+            'editedAt': int(self.edited_at.timestamp() * 1000) if self.edited_at else None,
             'timestamp': int(self.timestamp.timestamp() * 1000)
         }
 
@@ -160,3 +164,33 @@ class MessageRead(db.Model):
     message_id = db.Column(db.String(36), db.ForeignKey('messages.id'), nullable=False)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     read_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ============ 文件上传表 ============
+class FileUpload(db.Model):
+    __tablename__ = 'file_uploads'
+    
+    id = db.Column(db.String(36), primary_key=True)
+    conversation_id = db.Column(db.String(36), db.ForeignKey('conversations.id'), nullable=False)
+    sender_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    original_name = db.Column(db.String(255), nullable=False)
+    saved_name = db.Column(db.String(255), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)  # 字节
+    file_type = db.Column(db.String(100), nullable=False)  # MIME type
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关系
+    sender = db.relationship('User', backref='files')
+    conversation = db.relationship('Conversation', backref='files')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'conversationId': self.conversation_id,
+            'senderId': self.sender_id,
+            'senderName': self.sender.username,
+            'originalName': self.original_name,
+            'fileSize': self.file_size,
+            'fileType': self.file_type,
+            'url': f'/api/files/{self.id}',
+            'uploadedAt': int(self.uploaded_at.timestamp() * 1000)
+        }

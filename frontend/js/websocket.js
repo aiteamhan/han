@@ -28,10 +28,24 @@ class WebSocketManager {
                 reconnectionAttempts: this.maxReconnectAttempts
             });
             
+            // 连接事件
             this.socket.on('connect', () => this.onOpen());
             this.socket.on('disconnect', () => this.onClose());
             this.socket.on('error', (error) => this.onError(error));
+            
+            // 监听各类消息事件
             this.socket.on('message', (data) => this.onMessage(data));
+            this.socket.on('user_status', (data) => this.emit('user_status', data));
+            this.socket.on('notification', (data) => this.emit('notification', data));
+            this.socket.on('pong', (data) => {
+                // 心跳响应
+                console.log('Heartbeat pong received');
+            });
+            
+            // 监听编辑/撤回消息事件
+            this.socket.on('message_edited', (data) => this.emit('message_edited', data));
+            this.socket.on('message_deleted', (data) => this.emit('message_deleted', data));
+            this.socket.on('typing', (data) => this.emit('typing', data));
         } catch (error) {
             console.error('WebSocket connection error:', error);
             this.reconnect(token);
@@ -52,10 +66,9 @@ class WebSocketManager {
         this.emit('connected');
     }
 
-    // 接收消息
-    onMessage(event) {
+    // 接收消息 (Socket.IO 已自动处理序列化)
+    onMessage(data) {
         try {
-            const data = JSON.parse(event.data);
             console.log('Received message:', data);
             
             // 根据事件类型分发消息
@@ -72,7 +85,7 @@ class WebSocketManager {
             // 触发通用消息事件
             this.emit(`${data.type}:${data.event}`, data.data);
         } catch (error) {
-            console.error('Message parsing error:', error);
+            console.error('Message handling error:', error);
         }
     }
 
@@ -106,24 +119,24 @@ class WebSocketManager {
         this.reconnecting = true;
         this.reconnectAttempts++;
         
-        const delay = this.reconnectDelay * this.reconnectAttempts;
+        const delay = 3000 * this.reconnectAttempts;
         console.log(`Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts})`);
         
         setTimeout(() => {
-            this.ws = null;
+            this.socket = null;
             this.connect(token);
         }, delay);
     }
 
-    // 发送消息
-    send(data) {
-        if (!this.connected || !this.ws) {
+    // 发送消息 (使用 Socket.IO emit)
+    send(event, data) {
+        if (!this.connected || !this.socket) {
             console.error('WebSocket not connected');
             return false;
         }
 
         try {
-            this.ws.send(JSON.stringify(data));
+            this.socket.emit(event, data);
             return true;
         } catch (error) {
             console.error('Send error:', error);
@@ -133,23 +146,18 @@ class WebSocketManager {
 
     // 发送文本消息
     sendMessage(conversationId, content) {
-        return this.send({
-            type: 'message',
-            event: 'send_message',
-            data: {
-                conversation_id: conversationId,
-                content,
-                timestamp: Date.now()
-            }
+        return this.send('send_message', {
+            conversation_id: conversationId,
+            content,
+            timestamp: Date.now()
         });
     }
 
     // 心跳包
     startHeartbeat() {
         this.heartbeatTimer = setInterval(() => {
-            if (this.connected) {
-                this.send({
-                    type: 'ping',
+            if (this.connected && this.socket) {
+                this.socket.emit('ping', {
                     timestamp: Date.now()
                 });
             }
@@ -194,9 +202,9 @@ class WebSocketManager {
     // 断开连接
     disconnect() {
         this.stopHeartbeat();
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
+        if (this.socket) {
+            this.socket.disconnect();
+            this.socket = null;
         }
         this.connected = false;
         this.reconnecting = false;
@@ -205,3 +213,4 @@ class WebSocketManager {
 
 // 全局WebSocket管理实例
 const wsManager = new WebSocketManager();
+window.wsManager = wsManager;
