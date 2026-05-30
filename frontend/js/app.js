@@ -278,41 +278,33 @@ class App {
     // 处理登录
     async handleLogin(username, password) {
         try {
-            const response = await api.login(username, password);
-            
-            const { token, user } = response.data;
-            
-            // 保存认证信息
+            const res = await api.login(username, password);
+            if (res.code !== 0) throw new Error(res.message || '登录失败');
+
+            const { token, user } = res.data;
             storage.setToken(token);
             storage.setCurrentUser(user);
-
-            this.currentUser = user;
-            ui.setCurrentUser(user);
-
-            // 隐藏模态框
             ui.hideModal('loginModal');
-            
-            // 清空表单
-            $('#loginForm').reset();
 
-            // 检查是否为admin用户，如果是则跳转到管理后台
-            if (user.username === 'admin') {
-                // 延迟跳转，给用户一个反馈
-                setTimeout(() => {
-                    window.location.href = '/admin';
-                }, 500);
+            // 管理员直接跳转后台
+            if (user && user.username === 'admin') {
+                ui.showSuccess('管理员登录，正在跳转...');
+                window.location.href = '/admin';
                 return;
             }
 
-            // 连接WebSocket
-            this.connectWebSocket(token);
+            // 普通用户：显示成功提示并刷新页面以确保聊天界面完整初始化
+            ui.showSuccess('登录成功，正在进入聊天...');
+            try {
+                this.connectWebSocket(token);
+                await this.loadConversations();
+            } catch (e) {
+                // 如果加载会话失败，仍然刷新以尝试完整初始化
+                console.warn('会话加载失败，刷新页面以重试', e);
+            }
 
-            // 加载数据
-            await this.loadConversations();
-            await this.loadContacts();
-
-            this.initialized = true;
-            console.log('Login successful');
+            // 刷新页面让主界面基于已保存 token 重新初始化
+            setTimeout(() => window.location.reload(), 400);
         } catch (error) {
             console.error('Login failed:', error);
             let errorMsg = '登录失败';

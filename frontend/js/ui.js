@@ -126,10 +126,12 @@ class UIManager {
                 btn.addEventListener('click', (e) => {
                     const action = e.target.dataset.action;
                     if (action === 'edit') {
-                        window.app.editMessage(message);
+                        console.log('编辑消息:', message.id);
+                        // TODO: 实现消息编辑功能
                     } else if (action === 'revoke') {
                         if (confirm('确定要撤回这条消息吗？')) {
-                            window.app.deleteMessage(message.id);
+                            console.log('撤回消息:', message.id);
+                            // TODO: 实现消息撤回功能
                         }
                     }
                     group.querySelector('.message-actions').style.display = 'none';
@@ -174,15 +176,101 @@ class UIManager {
         $('#chatSubtitle').textContent = subtitle;
     }
 
-    // 显示错误消息
+    // 显示 Toast 消息（改进版）
+    _createToast(message, className = 'toast-info', duration = 2000) {
+        const containerId = 'toast-container';
+        let container = document.getElementById(containerId);
+        if (!container) {
+            container = document.createElement('div');
+            container.id = containerId;
+            document.body.appendChild(container);
+        }
+
+        // 创建 toast 元素
+        const toast = document.createElement('div');
+        toast.className = `toast ${className}`;
+        toast.style.position = 'relative';
+
+        // 创建内容容器
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'toast-content';
+        contentDiv.textContent = message;
+
+        // 创建关闭按钮
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', '关闭');
+        closeBtn.addEventListener('click', () => {
+            this._closeToast(toast, container);
+        });
+
+        // 组装 toast
+        toast.appendChild(contentDiv);
+        toast.appendChild(closeBtn);
+
+        container.appendChild(toast);
+
+        // 创建进度条
+        const progressBar = document.createElement('div');
+        progressBar.className = 'toast-progress';
+        progressBar.style.width = '100%';
+        progressBar.style.animation = `none`;
+        progressBar.style.transition = `width ${duration}ms linear`;
+        toast.appendChild(progressBar);
+
+        // 触发重排以应用动画
+        void toast.offsetWidth;
+
+        // 开始进度条动画
+        setTimeout(() => {
+            progressBar.style.width = '0%';
+        }, 10);
+
+        // 自动关闭
+        const timeoutId = setTimeout(() => {
+            this._closeToast(toast, container);
+        }, duration);
+
+        // 保存 timeout ID 以便手动关闭时清除
+        toast.timeoutId = timeoutId;
+    }
+
+    _closeToast(toast, container) {
+        // 清除计时器
+        if (toast.timeoutId) {
+            clearTimeout(toast.timeoutId);
+        }
+
+        // 添加关闭动画类
+        toast.classList.add('closing');
+
+        // 等待动画完成后移除元素
+        setTimeout(() => {
+            if (container.contains(toast)) {
+                container.removeChild(toast);
+            }
+        }, 300);
+    }
+
     showError(message) {
-        alert(`错误：${message}`);
+        this._createToast(message, 'toast-error', 4000);
     }
 
     // 显示成功消息
     showSuccess(message) {
-        console.log('Success:', message);
-        // 可以添加toast通知
+        this._createToast(message, 'toast-success', 2000);
+    }
+
+    // 显示信息消息
+    showInfo(message) {
+        this._createToast(message, 'toast-info', 2500);
+    }
+
+    // 显示警告消息
+    showWarning(message) {
+        this._createToast(message, 'toast-warning', 3000);
     }
 
     // 隐藏模态框
@@ -327,109 +415,13 @@ class UIManager {
             avatar.src = user.avatar || 'https://via.placeholder.com/36';
         }
     }
+
+    // 兼容旧代码：初始化消息操作（编辑/撤回）
+    initMessageActions() {
+        // 目前在 createMessageBubble 中已完成事件绑定，这里保留空实现以兼容旧调用点
+        return;
+    }
 }
 
 // 全局UI管理实例
-    // 更新消息显示 (编辑后或已标记删除)
-    updateMessageBubble(messageId, updates) {
-        const bubble = $(`[data-message-id="${messageId}"]`);
-        if (!bubble) return;
-
-        if (updates.isDeleted) {
-            const contentDiv = bubble.querySelector('.message-bubble');
-            if (contentDiv) {
-                contentDiv.textContent = '[消息已撤回]';
-                contentDiv.style.color = '#999';
-                contentDiv.style.fontStyle = 'italic';
-            }
-            // 移除编辑/撤回菜单
-            const menu = bubble.querySelector('.message-actions');
-            if (menu) menu.remove();
-        } else if (updates.content) {
-            const contentDiv = bubble.querySelector('.message-bubble');
-            if (contentDiv) {
-                contentDiv.textContent = updates.content;
-                // 添加已编辑标记
-                const timeDiv = bubble.querySelector('.message-time');
-                if (timeDiv && !timeDiv.textContent.includes('(已编辑)')) {
-                    timeDiv.textContent += ' (已编辑)';
-                }
-            }
-        }
-    }
-
-    // 添加消息编辑功能
-    addEditMessageMethod() {
-        if (window.app && !window.app.editMessage) {
-            window.app.editMessage = async (message) => {
-                const newContent = prompt('编辑消息:', message.content);
-                if (newContent !== null && newContent.trim()) {
-                    try {
-                        await api.editMessage(message.id, newContent.trim());
-                        ui.updateMessageBubble(message.id, { content: newContent.trim() });
-                        wsManager.socket?.emit('edit_message', {
-                            message_id: message.id,
-                            content: newContent.trim()
-                        });
-                    } catch (error) {
-                        ui.showError('编辑消息失败: ' + error.message);
-                    }
-                }
-            };
-        }
-    }
-
-    // 添加消息删除功能
-    addDeleteMessageMethod() {
-        if (window.app && !window.app.deleteMessage) {
-            window.app.deleteMessage = async (messageId) => {
-                try {
-                    await api.revokeMessage(messageId);
-                    ui.updateMessageBubble(messageId, { isDeleted: true });
-                    wsManager.socket?.emit('delete_message', {
-                        message_id: messageId
-                    });
-                } catch (error) {
-                    ui.showError('撤回消息失败: ' + error.message);
-                }
-            };
-        }
-    }
-
-    // 初始化消息编辑/删除功能
-    initMessageActions() {
-        this.addEditMessageMethod();
-        this.addDeleteMessageMethod();
-    }
-}
-
-// 创建全局UI管理实例
-try {
-    console.log('Creating UIManager instance...');
-    const ui = new UIManager();
-    console.log('UIManager created successfully');
-    window.ui = ui;
-    console.log('window.ui assigned:', typeof window.ui);
-    
-    // 验证分配
-    if (window.ui && window.ui instanceof UIManager) {
-        console.log('✓ ui instance successfully assigned to window');
-    } else {
-        console.warn('⚠ ui instance assignment verification failed');
-        window.ui = ui; // 强制重新分配
-    }
-} catch (error) {
-    console.error('Failed to create UIManager:', error);
-    window.ui = undefined;
-}
-
-// 立即验证
-setTimeout(function() {
-    if (typeof window.ui === 'undefined') {
-        console.warn('⚠ UIManager still not defined after creation, attempting manual assignment');
-        if (typeof UIManager !== 'undefined') {
-            window.ui = new UIManager();
-            console.log('Manual UIManager creation successful');
-        }
-    }
-}, 0);
+const ui = new UIManager();

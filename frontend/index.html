@@ -156,34 +156,54 @@
 
     <!-- 模态框 -->
     <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <h2>登录</h2>
-            <form id="loginForm">
-                <input type="text" id="loginUsername" placeholder="用户名" required>
+        <div class="modal-content auth-modal">
+            <div class="modal-header">
+                <h2>登录</h2>
+                <p class="modal-subtitle">使用你的账号登录，进入实时沟通空间。</p>
+            </div>
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <input type="text" id="loginUsername" placeholder="用户名" required>
+                </div>
+                <div class="form-group">
                     <input type="password" id="loginPassword" placeholder="密码" required>
-                    <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+                </div>
+                <div class="form-row">
+                    <label class="checkbox-row">
                         <input type="checkbox" id="loginShowPassword">
-                        <label for="loginShowPassword" style="user-select:none;">显示密码</label>
-                    </div>
+                        <span>显示密码</span>
+                    </label>
+                </div>
                 <button type="submit" class="btn-primary">登录</button>
-                <p>没有账号？<a href="#" id="switchToRegister">注册</a></p>
+                <p class="form-footer">没有账号？ <a href="#" id="switchToRegister">注册</a></p>
             </form>
         </div>
     </div>
 
     <div id="registerModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <h2>注册</h2>
-            <form id="registerForm">
-                <input type="text" id="registerUsername" placeholder="用户名" required>
-                <input type="password" id="registerPassword" placeholder="密码" required>
-                <input type="password" id="registerConfirm" placeholder="确认密码" required>
-                <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="registerShowPassword">
-                    <label for="registerShowPassword" style="user-select:none;">显示密码</label>
+        <div class="modal-content auth-modal">
+            <div class="modal-header">
+                <h2>注册</h2>
+                <p class="modal-subtitle">快速创建账户，马上开始聊天。</p>
+            </div>
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <input type="text" id="registerUsername" placeholder="用户名" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="密码" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerConfirm" placeholder="确认密码" required>
+                </div>
+                <div class="form-row">
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="registerShowPassword">
+                        <span>显示密码</span>
+                    </label>
                 </div>
                 <button type="submit" class="btn-primary">注册</button>
-                <p>已有账号？<a href="#" id="switchToLogin">登录</a></p>
+                <p class="form-footer">已有账号？ <a href="#" id="switchToLogin">登录</a></p>
             </form>
         </div>
     </div>

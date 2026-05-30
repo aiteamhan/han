@@ -1,7 +1,8 @@
 // API 调用封装
 
 class ApiClient {
-    constructor(baseURL = 'http://localhost:5000') {
+    constructor(baseURL = '') {
+        // 使用相对路径作为默认 baseURL，避免 origin 不一致导致的 CORS 问题
         this.baseURL = baseURL;
         this.timeout = 10000;
     }
@@ -35,7 +36,27 @@ class ApiClient {
 
         try {
             const response = await fetch(url, options);
-            const result = await response.json();
+
+            // 如果返回内容不是 JSON（例如 500 页面 HTML），读取为 text 并抛出可读错误
+            const contentType = response.headers.get('content-type') || '';
+            let result = null;
+
+            if (contentType.includes('application/json')) {
+                try {
+                    result = await response.json();
+                } catch (err) {
+                    // JSON 解析失败，尝试读取文本用于错误提示
+                    const text = await response.text();
+                    const error = new Error(text || `HTTP ${response.status}`);
+                    error.code = response.status;
+                    throw error;
+                }
+            } else {
+                const text = await response.text();
+                const error = new Error(text || `HTTP ${response.status}`);
+                error.code = response.status;
+                throw error;
+            }
 
             if (!response.ok) {
                 const error = new Error(result.message || `HTTP ${response.status}`);

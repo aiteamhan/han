@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import DatabaseManager, db
-from models import User, Message
+from models import User, Message, MessageRead, ConversationMember
 import uuid
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -56,9 +56,22 @@ def login():
     """用户登录"""
     from flask_jwt_extended import create_access_token
     
-    data = request.get_json()
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
+    data = request.get_json() or {}
+    username = data.get('username', '')
+    password = data.get('password', '')
+
+    # 兼容异常请求体，防止 username/password 为 dict 或其他类型导致 500
+    if isinstance(username, dict):
+        username = username.get('username', '')
+    if isinstance(password, dict):
+        password = password.get('password', '')
+    if not isinstance(username, str):
+        username = ''
+    if not isinstance(password, str):
+        password = ''
+
+    username = username.strip()
+    password = password.strip()
     
     if not username or not password:
         return jsonify({'message': '用户名和密码不能为空'}), 400
@@ -230,10 +243,36 @@ def delete_conversation(conversation_id):
 def mark_as_read(conversation_id):
     """标记会话消息为已读"""
     user_id = get_jwt_identity()
-    
-    # 这里应该实现标记消息为已读的逻辑
-    # 暂时返回成功
-    
+    conversation = DatabaseManager.get_conversation(conversation_id)
+
+    if not conversation:
+        return jsonify({'message': '会话不存在'}), 404
+
+    member = ConversationMember.query.filter_by(
+        conversation_id=conversation_id,
+        user_id=user_id
+    ).first()
+
+    if not member:
+        return jsonify({'message': '无权限'}), 403
+
+    unread_messages = Message.query.filter(
+        Message.conversation_id == conversation_id,
+        Message.sender_id != user_id
+    ).all()
+
+    for message in unread_messages:
+        existing = MessageRead.query.filter_by(message_id=message.id, user_id=user_id).first()
+        if not existing:
+            read_record = MessageRead(
+                id=str(uuid.uuid4()),
+                message_id=message.id,
+                user_id=user_id
+            )
+            db.session.add(read_record)
+
+    db.session.commit()
+
     return jsonify({
         'code': 0,
         'message': '标记成功'

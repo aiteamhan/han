@@ -208,6 +208,9 @@ class DatabaseManager:
             else:
                 # 群聊设置成员信息
                 conv_dict['members'] = [m.to_dict() for m in conv.members.all()]
+
+            # 计算未读数量
+            conv_dict['unread'] = DatabaseManager.get_unread_count(user_id, conv.id)
             
             result.append(conv_dict)
         
@@ -217,6 +220,16 @@ class DatabaseManager:
     def get_conversation(conversation_id):
         """获取会话详情"""
         return Conversation.query.get(conversation_id)
+
+    @staticmethod
+    def get_unread_count(user_id, conversation_id):
+        """获取会话中当前用户的未读消息数量"""
+        read_message_ids = db.session.query(MessageRead.message_id).filter_by(user_id=user_id).subquery()
+        return Message.query.filter(
+            Message.conversation_id == conversation_id,
+            Message.sender_id != user_id,
+            ~Message.id.in_(read_message_ids)
+        ).count()
     
     @staticmethod
     def delete_conversation(conversation_id):
