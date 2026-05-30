@@ -243,5 +243,24 @@
             });
         })();
     </script>
+        <script>
+            // 显示/隐藏密码切换逻辑（登录和注册表单）
+            (function bindShowPassword() {
+                function toggleInput(checkboxId, inputIds) {
+                    const cb = document.getElementById(checkboxId);
+                    if (!cb) return;
+                    cb.addEventListener('change', () => {
+                        inputIds.forEach(id => {
+                            const inp = document.getElementById(id);
+                            if (!inp) return;
+                            inp.type = cb.checked ? 'text' : 'password';
+                        });
+                    });
+                }
+
+                toggleInput('loginShowPassword', ['loginPassword']);
+                toggleInput('registerShowPassword', ['registerPassword', 'registerConfirm']);
+            })();
+        </script>
 </body>
 </html>
