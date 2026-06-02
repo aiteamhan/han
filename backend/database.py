@@ -205,6 +205,7 @@ class DatabaseManager:
                     conv_dict['avatar'] = other_user.avatar
                     conv_dict['online'] = other_user.online
                     conv_dict['participantId'] = other_user.id
+                    conv_dict['lastSeenTime'] = int(other_user.last_seen.timestamp() * 1000) if other_user.last_seen else None
             else:
                 # 群聊设置成员信息
                 conv_dict['members'] = [m.to_dict() for m in conv.members.all()]

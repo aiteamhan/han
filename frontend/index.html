@@ -8,41 +8,18 @@
 </head>
 <body>
     <div class="app-wrapper">
-        <!-- 最左侧功能图标排 (60px) -->
-        <div class="sidebar-icon-bar">
-            <button class="icon-bar-btn active" data-action="chat" title="聊天">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-                </svg>
-            </button>
-            <button class="icon-bar-btn" data-action="status" title="状态">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10"/>
-                </svg>
-            </button>
-            <button class="icon-bar-btn" data-action="channels" title="频道">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="3" y="5" width="8" height="8"/>
-                    <rect x="13" y="5" width="8" height="8"/>
-                    <rect x="3" y="15" width="8" height="8"/>
-                    <rect x="13" y="15" width="8" height="8"/>
-                </svg>
-            </button>
-            <button class="icon-bar-btn" data-action="community" title="社群">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.89 1.97 1.74 1.97 2.95V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                </svg>
-            </button>
-        </div>
-
         <!-- 左侧栏 (Sidebar) (350px) -->
         <div class="sidebar">
             <!-- 顶部导航 -->
             <div class="sidebar-header">
                 <div class="user-profile">
-                    <img id="userAvatar" src="https://via.placeholder.com/36" alt="头像" class="avatar">
+                    <div class="avatar-wrap">
+                        <img id="userAvatar" src="https://via.placeholder.com/36" alt="头像" class="avatar">
+                    </div>
+                    <span id="userName" class="user-name">未登录</span>
                 </div>
                 <div class="header-icons">
+                    <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
                     <button id="searchBtn" class="icon-btn" title="搜索">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"></circle>
@@ -55,27 +32,25 @@
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
+                    <div id="profileMenuContainer" style="position: relative; display: flex;">
+                        <button id="profileMenuBtn" class="icon-btn" title="用户菜单" aria-label="用户菜单">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="5" r="2"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <circle cx="12" cy="19" r="2"/>
+                            </svg>
+                        </button>
+                        <div id="profileMenu" class="profile-menu hidden" role="menu" aria-label="用户菜单">
+                            <button type="button" id="profileChangeAvatarBtn" class="profile-menu-item">更改头像</button>
+                            <button type="button" id="profileLogoutBtn" class="profile-menu-item">退出账号</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <!-- 通知提醒横幅 (Notification Banner) -->
-            <div class="notification-banner">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #09b83e;">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-                </svg>
-                <span>通知已关闭</span>
             </div>
 
             <!-- 搜索栏 -->
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="搜索...">
-            </div>
-
-            <!-- 过滤标签 (Filter Chips) -->
-            <div class="filter-chips">
-                <button class="chip active" data-filter="all">全部</button>
-                <button class="chip" data-filter="unread">未读</button>
-                <button class="chip" data-filter="group">群组</button>
             </div>
 
             <!-- 会话列表 -->
@@ -175,6 +150,7 @@
                     </label>
                 </div>
                 <button type="submit" class="btn-primary">登录</button>
+                <p class="form-footer"><a href="/admin" class="admin-login-link">管理员登录</a></p>
                 <p class="form-footer">没有账号？ <a href="#" id="switchToRegister">注册</a></p>
             </form>
         </div>

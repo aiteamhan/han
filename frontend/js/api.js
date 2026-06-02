@@ -89,6 +89,30 @@ class ApiClient {
         return this.request('PUT', '/api/users/me', data);
     }
 
+    uploadAvatar(file) {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const token = storage.getToken();
+        const options = {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            body: formData
+        };
+
+        return fetch(`${this.baseURL}/api/users/avatar`, options)
+            .then(async response => {
+                const result = await response.json();
+                if (!response.ok) {
+                    const error = new Error(result.message || `HTTP ${response.status}`);
+                    error.code = result.status || response.status;
+                    error.response = result;
+                    throw error;
+                }
+                return result;
+            });
+    }
+
     // ============ 会话相关 ============
     getConversations() {
         return this.request('GET', '/api/conversations');
@@ -128,6 +152,38 @@ class ApiClient {
 
     revokeMessage(messageId) {
         return this.request('DELETE', `/api/messages/${messageId}`);
+    }
+
+    editMessage(messageId, content) {
+        return this.request('PUT', `/api/messages/${messageId}`, { content });
+    }
+
+    uploadFile(conversationId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('conversation_id', conversationId);
+
+        const token = storage.getToken();
+        const options = {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            body: formData
+        };
+
+        try {
+            return fetch(`${this.baseURL}/api/files/upload`, options)
+                .then(response => {
+                    if (!response.ok) {
+                        const error = new Error(`HTTP ${response.status}`);
+                        error.code = response.status;
+                        throw error;
+                    }
+                    return response.json();
+                });
+        } catch (error) {
+            console.error('Upload Error:', error);
+            throw error;
+        }
     }
 
     // ============ 联系人相关 ============

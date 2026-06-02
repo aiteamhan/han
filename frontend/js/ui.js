@@ -93,15 +93,15 @@ class UIManager {
         let html = `<img src="${avatar}" alt="" class="message-avatar">`;
         html += `<div style="display: flex; flex-direction: column; align-items: ${isOwn ? 'flex-end' : 'flex-start'}; position: relative; width: 100%;">
                     <div class="message-bubble ${isOwn ? 'self' : 'other'}" style="position: relative;">
-                        ${this.escapeHtml(message.content)}
+                        ${message.status === 'deleted' ? '[已撤回]' : this.escapeHtml(message.content)}
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div class="message-time">${formatTime(message.timestamp)}</div>
                         ${isOwn && message.status === 'read' ? '<span class="message-read-status">（已读）</span>' : ''}
                     </div>`;
         
-        // 自己的消息显示编辑/撤回菜单
-        if (isOwn) {
+        // 自己的消息且未被撤回时显示编辑/撤回菜单
+        if (isOwn && message.status !== 'deleted') {
             html += `<div class="message-actions" style="display: none;">
                         <button data-action="edit" title="编辑">编辑</button>
                         <button data-action="revoke" title="撤回">撤回</button>
@@ -112,8 +112,17 @@ class UIManager {
 
         group.innerHTML = html;
 
+        // 已撤回的消息设置透明度
+        if (message.status === 'deleted') {
+            group.style.opacity = '0.5';
+            const bubble = group.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.style.fontStyle = 'italic';
+            }
+        }
+
         // 为自己的消息添加右键菜单和点击处理
-        if (isOwn) {
+        if (isOwn && message.status !== 'deleted') {
             const bubble = group.querySelector('.message-bubble');
             bubble.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
@@ -123,15 +132,53 @@ class UIManager {
 
             // 菜单按钮事件
             group.querySelectorAll('.message-actions button').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const action = e.target.dataset.action;
                     if (action === 'edit') {
-                        console.log('编辑消息:', message.id);
-                        // TODO: 实现消息编辑功能
+                        const newContent = prompt('编辑消息内容:', message.content);
+                        if (newContent && newContent !== message.content) {
+                            try {
+                                const response = await api.editMessage(message.id, newContent);
+                                if (response.code === 0) {
+                                    // 更新消息内容
+                                    message.content = newContent;
+                                    message.isEdited = true;
+                                    bubble.textContent = newContent;
+                                    
+                                    // 添加 "已编辑" 标记
+                                    let editedTag = bubble.querySelector('.message-edited-tag');
+                                    if (!editedTag) {
+                                        editedTag = document.createElement('span');
+                                        editedTag.className = 'message-edited-tag';
+                                        editedTag.style.fontSize = '0.8em';
+                                        editedTag.style.marginLeft = '4px';
+                                        editedTag.style.color = '#999';
+                                        editedTag.textContent = '(已编辑)';
+                                        bubble.appendChild(editedTag);
+                                    }
+                                }
+                            } catch (error) {
+                                alert('编辑消息失败: ' + error.message);
+                            }
+                        }
                     } else if (action === 'revoke') {
                         if (confirm('确定要撤回这条消息吗？')) {
-                            console.log('撤回消息:', message.id);
-                            // TODO: 实现消息撤回功能
+                            try {
+                                const response = await api.revokeMessage(message.id);
+                                if (response.code === 0) {
+                                    // 从UI中移除消息
+                                    group.remove();
+                                    // 通知其他用户消息已被撤回（通过 WebSocket）
+                                    if (window.wsManager && window.wsManager.socket) {
+                                        window.wsManager.emit('message_revoked', {
+                                            messageId: message.id,
+                                            conversationId: window.app.currentConversationId
+                                        });
+                                    }
+                                }
+                            } catch (error) {
+                                alert('撤回消息失败: ' + error.message);
+                            }
                         }
                     }
                     group.querySelector('.message-actions').style.display = 'none';
@@ -169,7 +216,14 @@ class UIManager {
         
         let subtitle = '';
         if (conversation.type === 'private') {
-            subtitle = conversation.online ? '在线' : '离线';
+            if (conversation.online) {
+                subtitle = '在线';
+            } else {
+                subtitle = '离线';
+                if (conversation.lastSeenTime) {
+                    subtitle += ` · 最后在线 ${formatRelativeTime(conversation.lastSeenTime)}`;
+                }
+            }
         } else {
             subtitle = `${conversation.memberCount}个成员`;
         }
@@ -411,8 +465,12 @@ class UIManager {
     setCurrentUser(user) {
         this.currentUser = user;
         const avatar = $('#userAvatar');
+        const nameEl = $('#userName');
         if (avatar) {
-            avatar.src = user.avatar || 'https://via.placeholder.com/36';
+            avatar.src = (user && user.avatar) ? user.avatar : 'https://via.placeholder.com/36';
+        }
+        if (nameEl) {
+            nameEl.textContent = (user && (user.username || user.nickname)) ? (user.username || user.nickname) : '未登录';
         }
     }
 
@@ -420,6 +478,41 @@ class UIManager {
     initMessageActions() {
         // 目前在 createMessageBubble 中已完成事件绑定，这里保留空实现以兼容旧调用点
         return;
+    }
+
+    // 更新消息气泡内容
+    updateMessageBubble(messageId, updateData) {
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageElement) {
+            return;
+        }
+
+        if (updateData.content) {
+            const bubble = messageElement.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.textContent = updateData.content;
+                // 添加 "已编辑" 标记
+                let editedTag = bubble.querySelector('.message-edited-tag');
+                if (!editedTag) {
+                    editedTag = document.createElement('span');
+                    editedTag.className = 'message-edited-tag';
+                    editedTag.style.fontSize = '0.8em';
+                    editedTag.style.marginLeft = '4px';
+                    editedTag.style.color = '#999';
+                    editedTag.textContent = '(已编辑)';
+                    bubble.appendChild(editedTag);
+                }
+            }
+        }
+
+        if (updateData.isDeleted) {
+            messageElement.style.opacity = '0.5';
+            const bubble = messageElement.querySelector('.message-bubble');
+            if (bubble) {
+                bubble.textContent = '[已撤回]';
+                bubble.style.fontStyle = 'italic';
+            }
+        }
     }
 }
 

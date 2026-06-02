@@ -51,6 +51,9 @@ class App {
             wsManager.socket.on('message_edited', (data) => {
                 ui.updateMessageBubble(data.messageId, { content: data.content });
             });
+            wsManager.socket.on('message_revoked', (data) => {
+                ui.updateMessageBubble(data.messageId, { isDeleted: true });
+            });
             wsManager.socket.on('message_deleted', (data) => {
                 ui.updateMessageBubble(data.messageId, { isDeleted: true });
             });
@@ -58,6 +61,13 @@ class App {
 
         this.initialized = true;
         console.log('App initialized');
+    }
+
+    // 切换个人菜单显示
+    toggleProfileMenu() {
+        const menu = $('#profileMenu');
+        if (!menu) return;
+        menu.classList.toggle('hidden');
     }
 
     // 连接WebSocket
@@ -488,11 +498,70 @@ class App {
             }
         });
 
-        // 用户头像点击
-        $('#userAvatar')?.addEventListener('click', () => {
-            if (confirm('确定要登出吗？')) {
+        // 用户头像点击：打开/关闭个人菜单
+        $('#userAvatar')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleProfileMenu();
+        });
+
+        // 打开个人菜单按钮
+        $('#profileMenuBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleProfileMenu();
+        });
+
+        // 更改头像
+        $('#profileChangeAvatarBtn')?.addEventListener('click', () => {
+            const input = $('#avatarFileInput');
+            if (!input) return;
+            input.value = '';
+            input.click();
+        });
+
+        $('#avatarFileInput')?.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                ui.showError('请选择有效的图片文件');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                ui.showError('图片大小不能超过 5MB');
+                return;
+            }
+
+            try {
+                ui.showSuccess('正在上传头像...');
+                const res = await api.uploadAvatar(file);
+                const user = res.data;
+                storage.setCurrentUser(user);
+                ui.setCurrentUser(user);
+                ui.showSuccess('头像已更新');
+            } catch (error) {
+                console.error('Avatar upload failed:', error);
+                ui.showError(error.response?.message || error.message || '头像上传失败');
+            }
+        });
+
+        // 退出账号
+        $('#profileLogoutBtn')?.addEventListener('click', () => {
+            if (confirm('确定要退出账号吗？')) {
                 this.logout();
             }
+        });
+
+        // 点击页面其它区域关闭菜单
+        document.addEventListener('click', () => {
+            const menu = $('#profileMenu');
+            if (menu && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        $('#profileMenu')?.addEventListener('click', (e) => {
+            e.stopPropagation();
         });
 
         // 会话信息按钮

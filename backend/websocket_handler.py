@@ -240,6 +240,14 @@ def handle_ping(data, sid):
     except Exception as e:
         logger.error(f'Ping error: {e}')
 
+def emit_to_conversation(conversation_id, event_name, data):
+    """向指定会话中的所有用户广播事件"""
+    try:
+        from flask_socketio import emit as socketio_emit
+        socketio_emit(event_name, data, room=f'conversation_{conversation_id}')
+    except Exception as e:
+        logger.error(f'Error emitting to conversation: {e}')
+
 def register_websocket_handlers(socketio):
     """注册所有WebSocket事件处理器"""
     

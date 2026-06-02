@@ -21,6 +21,34 @@ function formatTime(timestamp) {
     }
 }
 
+function formatRelativeTime(timestamp) {
+    if (!timestamp) return '未知时间';
+    const diff = Date.now() - timestamp;
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+
+    if (diff < minute) {
+        return '刚刚';
+    }
+    if (diff < hour) {
+        return `${Math.floor(diff / minute)}分钟前`;
+    }
+    if (diff < day) {
+        return `${Math.floor(diff / hour)}小时前`;
+    }
+
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === yesterday.toDateString()) {
+        return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString('zh-CN');
+}
+
 // 防抖函数
 function debounce(func, wait) {
     let timeout;

@@ -32,6 +32,7 @@ class User(db.Model):
             'nickname': self.nickname,
             'bio': self.bio,
             'online': self.online,
+            'last_seen': self.last_seen.isoformat() if self.last_seen else None,
             'created_at': self.created_at.isoformat()
         }
 
@@ -80,8 +81,13 @@ class Conversation(db.Model):
         
         # 获取最后一条消息
         last_message = self.messages.order_by(Message.timestamp.desc()).first()
-        last_msg_content = last_message.content if last_message else '暂无消息'
-        last_msg_time = last_message.timestamp if last_message else self.created_at
+        if last_message:
+            # 检查消息状态，如果已删除则显示[已撤回]
+            last_msg_content = '[已撤回]' if last_message.status == 'deleted' else last_message.content
+            last_msg_time = last_message.timestamp
+        else:
+            last_msg_content = '暂无消息'
+            last_msg_time = self.created_at
         
         # 对于私聊，name应该是对方的用户名
         name = self.name
